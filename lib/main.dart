@@ -24,6 +24,33 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class DrawingArea {
+  Offset point;
+  Paint areaPaint;
+
+  DrawingArea({required this.point, required this.areaPaint});
+}
+
+class MyCustomPainter extends CustomPainter {
+  List<List<DrawingArea>> pointsList = [];
+  MyCustomPainter({required this.pointsList});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (List<DrawingArea> points in pointsList) {
+      for (int i = 0; i < points.length - 1; i++) {
+        if (points[i] != null && points[i + 1] != null) {
+          canvas.drawLine(
+              points[i].point, points[i + 1].point, points[i].areaPaint);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
   final String title;
@@ -37,6 +64,9 @@ class _MyHomePageState extends State<MyHomePage> {
   List<String> imagePaths = []; // 画像のリスト
   String? directory; // 選択されたディレクトリのパス
 
+  List<DrawingArea> points = [];
+  List<List<DrawingArea>> pointsList = [];
+
   void _selectImage(String imagePath) {
     setState(() {
       selectedImagePath = imagePath;
@@ -49,16 +79,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (selectedDirectory != null) {
       Directory directory = Directory(selectedDirectory);
-      List<FileSystemEntity> files = directory
-          .listSync()
-          .where((element) =>
-              element is File &&
-              ['.jpg', '.jpeg', '.png']
-                  .contains('.' + element.path.split('.').last.toLowerCase()))
-          .toList();
+      List<String> tempImagePaths = [];
+
+      await for (var entity in directory.list()) {
+        if (entity is File &&
+            ['.jpg', '.jpeg', '.png']
+                .contains('.' + entity.path.split('.').last.toLowerCase())) {
+          tempImagePaths.add(entity.path);
+        }
+      }
       setState(() {
         this.directory = selectedDirectory;
-        imagePaths = files.map((e) => e.path).toList();
+        imagePaths = tempImagePaths;
+        selectedImagePath =
+            tempImagePaths.isNotEmpty ? tempImagePaths[0] : null;
       });
     }
   }
@@ -69,7 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
-        leading: BackButton(color: Colors.amber.shade900),
+        leading: BackButton(),
       ),
       body: Row(
         children: [
@@ -82,25 +116,61 @@ class _MyHomePageState extends State<MyHomePage> {
                   onTap: () => _selectImage(imagePaths[index]),
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Image.asset(imagePaths[index]),
+                    child: Image.file(File(imagePaths[index])),
                   ),
                 );
               },
             ),
           ),
           Expanded(
-            flex: 8,
-            child: Center(
-              child: selectedImagePath == null
-                  ? const Text("No image selected")
-                  : Image.asset(selectedImagePath!),
-            ),
-          ),
+              flex: 8,
+              child: Column(
+                children: [
+                  Expanded(
+                    flex: 6,
+                    child: selectedImagePath == null
+                        ? const Center(child: Text("No image selected."))
+                        : GestureDetector(
+                            onPanUpdate: (details) {
+                              setState(() {
+                                RenderBox renderBox =
+                                    context.findRenderObject() as RenderBox;
+                                points.add(DrawingArea(
+                                  point: renderBox
+                                      .globalToLocal(details.localPosition),
+                                  areaPaint: Paint()
+                                    ..strokeCap = StrokeCap.round
+                                    ..isAntiAlias = true
+                                    ..color = Colors.pink.shade200
+                                    ..strokeWidth = 2.0,
+                                ));
+                              });
+                            },
+                            onPanEnd: (details) {
+                              setState(() {
+                                pointsList.add(List.from(points));
+                                points.clear();
+                              });
+                            },
+                            child:
+                                Stack(alignment: Alignment.center, children: [
+                              Image.file(File(selectedImagePath!)),
+                              CustomPaint(
+                                painter:
+                                    MyCustomPainter(pointsList: pointsList),
+                                size: Size.infinite,
+                              )
+                            ]),
+                          ),
+                  ),
+                  Expanded(flex: 4, child: Text("Button"))
+                ],
+              )),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: selectFolder,
-        tooltip: 'Increment',
+        tooltip: 'select folder',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
