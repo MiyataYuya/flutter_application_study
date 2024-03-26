@@ -75,6 +75,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> selectFolder() async {
     // 画像のあるフォルダを選択して画像パスのリストを作成。
+
+    // ...
+
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
 
     if (selectedDirectory != null) {
@@ -127,43 +130,20 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                 children: [
                   Expanded(
-                    flex: 6,
+                    flex: 8,
                     child: selectedImagePath == null
                         ? const Center(child: Text("No image selected."))
-                        : GestureDetector(
-                            onPanUpdate: (details) {
-                              setState(() {
-                                RenderBox renderBox =
-                                    context.findRenderObject() as RenderBox;
-                                points.add(DrawingArea(
-                                  point: renderBox
-                                      .globalToLocal(details.localPosition),
-                                  areaPaint: Paint()
-                                    ..strokeCap = StrokeCap.round
-                                    ..isAntiAlias = true
-                                    ..color = Colors.pink.shade200
-                                    ..strokeWidth = 2.0,
-                                ));
-                              });
-                            },
-                            onPanEnd: (details) {
-                              setState(() {
-                                pointsList.add(List.from(points));
-                                points.clear();
-                              });
-                            },
-                            child:
-                                Stack(alignment: Alignment.center, children: [
-                              Image.file(File(selectedImagePath!)),
-                              CustomPaint(
-                                painter:
-                                    MyCustomPainter(pointsList: pointsList),
-                                size: Size.infinite,
-                              )
-                            ]),
-                          ),
+                        : Stack(alignment: Alignment.center, children: [
+                            Image.file(
+                              File(selectedImagePath!),
+                              fit: BoxFit.contain,
+                            ),
+                            CustomPaint(
+                              painter: MyCustomPainter(pointsList: pointsList),
+                            )
+                          ]),
                   ),
-                  Expanded(flex: 4, child: Text("Button"))
+                  Expanded(flex: 2, child: Text("Button"))
                 ],
               )),
         ],
