@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -67,6 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
   List<DrawingArea> points = [];
   List<List<DrawingArea>> pointsList = [];
 
+  String _data = "Load JSON Data";
+
   void _selectImage(String imagePath) {
     setState(() {
       selectedImagePath = imagePath;
@@ -98,6 +101,18 @@ class _MyHomePageState extends State<MyHomePage> {
             tempImagePaths.isNotEmpty ? tempImagePaths[0] : null;
       });
     }
+  }
+
+  void _updateJsonData() {
+    setState(() {
+      loadJsonAsset();
+    });
+  }
+
+  Future<void> loadJsonAsset() async {
+    _data = "";
+    String loadData = await rootBundle.loadString("demo/split01.json");
+    _data = loadData;
   }
 
   @override
@@ -143,7 +158,12 @@ class _MyHomePageState extends State<MyHomePage> {
                             )
                           ]),
                   ),
-                  Expanded(flex: 2, child: Text("Button"))
+                  Expanded(
+                      flex: 2,
+                      child: TextButton(
+                        onPressed: _updateJsonData,
+                        child: Text(_data.isEmpty.toString()),
+                      ))
                 ],
               )),
         ],
