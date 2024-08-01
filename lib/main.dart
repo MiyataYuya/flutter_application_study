@@ -95,7 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
       setState(() {
-        this.directory = selectedDirectory;
+        // this.directory = selectedDirectory;
         imagePaths = tempImagePaths;
         selectedImagePath =
             tempImagePaths.isNotEmpty ? tempImagePaths[0] : null;
@@ -162,7 +162,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       flex: 2,
                       child: TextButton(
                         onPressed: _updateJsonData,
-                        child: Text(_data.isEmpty.toString()),
+                        child: Text(_data.length.toString()),
                       ))
                 ],
               )),
